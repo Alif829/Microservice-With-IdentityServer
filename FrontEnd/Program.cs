@@ -1,14 +1,16 @@
 using FronteEnd;
 using FrontEnd.Services;
 using FrontEnd.Services.IServices;
-
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
 builder.Services.AddHttpClient<IProductService,ProductService>();
 SD.ProductAPIBase = builder.Configuration["ServiceUrls:ProductAPI"];
+
 builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddAuthentication(options =>
@@ -24,12 +26,11 @@ builder.Services.AddAuthentication(options =>
                     options.ClientId = "mango";
                     options.ClientSecret = "secret";
                     options.ResponseType = "code";
-                
                     options.TokenValidationParameters.NameClaimType = "name";
                     options.TokenValidationParameters.RoleClaimType = "role";
                     options.Scope.Add("mango");
                     options.SaveTokens = true;
-
+                    options.ClaimActions.MapJsonKey("role", "role");
                 });
 
 var app = builder.Build();

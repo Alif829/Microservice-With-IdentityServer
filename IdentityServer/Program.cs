@@ -1,7 +1,9 @@
+using Duende.IdentityServer.Services;
 using Identity;
 using Identity.DbContexts;
 using Identity.Initializer;
 using Identity.Models;
+using Identity.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +28,7 @@ builder.Services.AddIdentityServer(options =>
             .AddInMemoryClients(SD.Clients)
             .AddAspNetIdentity<ApplicationUser>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<IProfileService,ProfileService>();
 
 var app = builder.Build();
 
