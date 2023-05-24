@@ -33,6 +33,7 @@ builder.Services.AddAuthentication(options =>
                     options.ClaimActions.MapJsonKey("role", "role");
                 });
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
