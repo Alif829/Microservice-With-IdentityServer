@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,16 +30,17 @@ namespace FrontEnd.Controllers
 
         public async Task<IActionResult> Index()
         {
-            List<ProductDto> list = new();
+            //List<Product> list = new();
+            IEnumerable<ProductDto> list=new ProductDto[1];
             var response = await _productService.GetAllProductsAsync<ResponseDto>("");
             if (response != null && response.IsSuccess)
             {
-                list = JsonConvert.DeserializeObject<List<ProductDto>>(Convert.ToString(response.Result));
+                list = JsonConvert.DeserializeObject<IEnumerable<ProductDto>>(Convert.ToString(response.Result));
             }
             return View(list);
         }
 
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> Details(int productId)
         {
             ProductDto model = new();

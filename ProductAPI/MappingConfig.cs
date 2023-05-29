@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
-
-using ProductAPI.Models;
-using ProductAPI.Models.Dtos;
+using ProductModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;

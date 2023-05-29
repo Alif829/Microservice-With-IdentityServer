@@ -41,4 +41,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.30.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ProductInterface\ProductInterface.csproj" />
+    <ProjectReference Include="..\ProductModel\ProductModel.csproj" />
+  </ItemGroup>
+
 </Project>

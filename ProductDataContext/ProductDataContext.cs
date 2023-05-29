@@ -1,4 +1,5 @@
-﻿using ConnectionGateway;
+﻿using AutoMapper;
+using ConnectionGateway;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using ProductInterface;
@@ -16,71 +17,102 @@ namespace ProductDataContext
     public class ProductDataContext:IProductDataContext
     {
         private  IDbConnection connection;
-        private readonly IVATDBContext vatContext;
+        private IMapper _mapper;
+        private IVATDBContext vatContext;
 
-        public ProductDataContext(IConfiguration configuration)
+        public ProductDataContext(IVATDBContext vatContext, IMapper mapper)
         {
             this.connection = vatContext.GetConnection();
+            this.vatContext = vatContext;
+            _mapper = mapper;
         }
-
-        public async Task<Product> CreateUpdateProduct(Product product)
-        {
-            var update = "UPDATE Products SET Name=@Name,Price=@Price," +
-                      "Description=@Description,ImageUrl=@ImageUrl,CategoryName=@CategoryName WHERE ProductID=@ProductID";
-
-            var create = "INSERT INTO Products (Name,CategoryName,Description,ImageUrl,Price) " +
-                "                        VALUES(@Name,@CategoryName,@Description,@ImageUrl,@Price);" +
-                                        "SELECT CAST(SCOPE_IDENTITY() as int); ";
-
-            var parameters = new DynamicParameters();
-            parameters.Add("@CompanyID", product.ProductId, DbType.Int32);
-            parameters.Add("@Name", product.Name, DbType.String);
-            parameters.Add("@CategoryName", product.CategoryName, DbType.String);
-            parameters.Add("@Description", product.Description, DbType.String);
-            parameters.Add("@ImageUrl", product.ImageUrl, DbType.String);
-            parameters.Add("@Price", product.Price, DbType.Int32);
-
-
-            if (product.ProductId>0)
-            {
-                await connection.ExecuteAsync(update, parameters);
-            }
-            else
-            {
-                await connection.ExecuteAsync(create, parameters);
-            }
-            return product;
-        }
-
         public async Task<bool> DeleteProduct(int productId)
         {
-                var query = "DELETE FROM Products WHERE ProductId = @ProductId"; 
+            using (var connection = vatContext.GetConnection())
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var query = "DELETE FROM Products WHERE ProductId = @ProductId";
 
-                var parameters = new { ProductId = productId };
+                        var parameters = new { ProductId = productId };
 
-                int rowsAffected = await connection.ExecuteAsync(query, parameters);
+                        int rowsAffected = await connection.ExecuteAsync(query, parameters, transaction);
 
-                return rowsAffected > 0;
+                        transaction.Commit();
+
+                        return rowsAffected > 0;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
         }
 
-
-        Task<IEnumerable<Product>> IProductDataContext.GetProducts()
+        public async Task<IEnumerable<ProductDto>> GetProducts()
         {
-                var query = "SELECT * FROM Products";
+            var query = "SELECT * FROM Products";
 
-                var products = connection.QueryAsync<Product>(query);
+            var products = await connection.QueryAsync<Product>(query);
 
-                return products;
+            return _mapper.Map<IEnumerable<ProductDto>>(products);
         }
 
-        Task<Product> IProductDataContext.GetProductById(int productId)
+        public async Task<ProductDto> GetProductById(int productId)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@ProductID", productId, DbType.Int32);
 
-            var sql = "SELECT * FROM Products WHERE ProductID=@ProductID";
+            var sql = "SELECT * FROM Products WHERE ProductId=@ProductId";
+            var product= await connection.QuerySingleOrDefaultAsync<Product>(sql, parameters);
+            
+            return _mapper.Map<ProductDto>(product);
+        }
 
-            return connection.QuerySingleOrDefaultAsync<Product>(sql, parameters);
+        public async Task<ProductDto> CreateUpdateProduct(ProductDto productDto)
+        {
+            using(connection)
+            {
+                Product product = _mapper.Map<ProductDto, Product>(productDto);
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var update = "UPDATE Products SET Name=@Name, Price=@Price, Description=@Description, ImageUrl=@ImageUrl, CategoryName=@CategoryName WHERE ProductId=@ProductId";
+                        var create = "INSERT INTO Products (Name, CategoryName, Description, ImageUrl, Price) VALUES (@Name, @CategoryName, @Description, @ImageUrl, @Price); SELECT CAST(SCOPE_IDENTITY() as int);";
+
+                        var parameters = new DynamicParameters();
+                        parameters.Add("@ProductId", product.ProductId, DbType.Int32);
+                        parameters.Add("@Name", product.Name, DbType.String);
+                        parameters.Add("@CategoryName", product.CategoryName, DbType.String);
+                        parameters.Add("@Description", product.Description, DbType.String);
+                        parameters.Add("@ImageUrl", product.ImageUrl, DbType.String);
+                        parameters.Add("@Price", product.Price, DbType.Int32);
+
+                        if (product.ProductId > 0)
+                        {
+                            await connection.ExecuteAsync(update, parameters, transaction);
+                        }
+                        else
+                        {
+                            var newProductId = await connection.ExecuteScalarAsync<int>(create, parameters, transaction);
+                            product.ProductId = newProductId;
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                    return _mapper.Map<Product, ProductDto>(product);
+                }
+            }
         }
     }
 }

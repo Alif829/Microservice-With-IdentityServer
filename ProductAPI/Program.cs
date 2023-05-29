@@ -1,4 +1,5 @@
 using AutoMapper;
+using ConnectionGateway;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -6,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using ProductAPI;
 using ProductAPI.DbContext;
 using ProductAPI.Repository;
+using ProductInterface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,9 @@ IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
 builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
+builder.Services.AddScoped<IProductDataContext,ProductDataContext.ProductDataContext>();
+builder.Services.AddScoped<IVATDBContext, VATDBContext>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

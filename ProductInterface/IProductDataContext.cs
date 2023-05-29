@@ -9,9 +9,9 @@ namespace ProductInterface
 {
     public interface IProductDataContext
     {
-        Task<IEnumerable<Product>> GetProducts();
-        Task<Product> GetProductById(int productId);
-        Task<Product> CreateUpdateProduct(Product product);
+        Task<IEnumerable<ProductDto>> GetProducts();
+        Task<ProductDto> GetProductById(int productId);
+        Task<ProductDto> CreateUpdateProduct(ProductDto productDto);
         Task<bool> DeleteProduct(int productId);
     }
 }

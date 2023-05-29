@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductAPI.Models.Dto;
-using ProductAPI.Models.Dtos;
 using ProductAPI.Repository;
+using ProductInterface;
+using ProductModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +16,13 @@ namespace ProductAPI.Controllers
     public class ProductAPIController : ControllerBase
     {
         protected ResponseDto _response;
-        private IProductRepository _productRepository;
+        //private IProductRepository _productRepository;
+        private IProductDataContext _productDataContext;
 
-        public ProductAPIController(IProductRepository productRepository)
+        public ProductAPIController(IProductDataContext productDataContext)
         {
-            _productRepository = productRepository;
+           // _productRepository = productRepository;
+            _productDataContext = productDataContext;
             this._response = new ResponseDto();
         }
         [HttpGet]
@@ -27,8 +30,9 @@ namespace ProductAPI.Controllers
         {
             try
             {
-                IEnumerable<ProductDto> productDtos = await _productRepository.GetProducts();
-                _response.Result = productDtos;
+                //IEnumerable<ProductDto> productDtos = await _productRepository.GetProducts();
+                IEnumerable<ProductDto> products = await _productDataContext.GetProducts();
+                _response.Result = products;
             }
             catch (Exception ex)
             {
@@ -45,7 +49,8 @@ namespace ProductAPI.Controllers
         {
             try
             {
-                ProductDto productDto = await _productRepository.GetProductById(id);
+                //ProductDto productDto = await _productRepository.GetProductById(id);
+                ProductDto productDto = await _productDataContext.GetProductById(id);
                 _response.Result = productDto;
             }
             catch (Exception ex)
@@ -64,7 +69,8 @@ namespace ProductAPI.Controllers
         {
             try
             {
-                ProductDto model = await _productRepository.CreateUpdateProduct(productDto);
+                ProductDto model = await _productDataContext.CreateUpdateProduct(productDto);
+                //Product model = await _productDataContext.CreateUpdateProduct(product);
                 _response.Result = model;
             }
             catch (Exception ex)
@@ -83,7 +89,8 @@ namespace ProductAPI.Controllers
         {
             try
             {
-                ProductDto model = await _productRepository.CreateUpdateProduct(productDto);
+                ProductDto model = await _productDataContext.CreateUpdateProduct(productDto);
+                //Product model = await _productDataContext.CreateUpdateProduct(product);
                 _response.Result = model;
             }
             catch (Exception ex)
@@ -102,7 +109,8 @@ namespace ProductAPI.Controllers
         {
             try
             {
-                bool isSuccess = await _productRepository.DeleteProduct(id);
+                //bool isSuccess = await _productRepository.DeleteProduct(id);
+                bool isSuccess = await _productDataContext.DeleteProduct(id);
                 _response.Result = isSuccess;
             }
             catch (Exception ex)
